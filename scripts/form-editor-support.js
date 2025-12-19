@@ -245,6 +245,7 @@ async function renderFormBlock(form, editMode) {
       const formDefResp = await fetch(`${form.dataset.formpath}.model.json`);
       if (!formDefResp.ok) {
         console.error(`Failed to fetch form definition: ${formDefResp.status}`);
+        return null;
       }
     
         formDef = await formDefResp.json();
