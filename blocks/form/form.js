@@ -430,6 +430,10 @@ function extractFormDefinition(block) {
 
 export async function fetchForm(pathname) {
   // get the main form
+  if (!pathname) {
+    console.error('fetchForm: Missing pathname parameter');
+    return null;
+  }
   let data;
   let path = pathname;
   if (path.startsWith(window.location.origin) && !path.includes('.json')) {
@@ -438,25 +442,45 @@ export async function fetchForm(pathname) {
     }
     path += '/jcr:content/root/section/form.html';
   }
-  let resp = await fetch(path);
+  let resp;
+  try {
+    resp = await fetch(path);
+    if (!resp.ok) {
+      console.error(`fetchForm: Failed to fetch form from ${path}: ${resp.status}`);
+      return null;
+    }
+  } catch (error) {
+    console.error('fetchForm: Network error:', error);
+    return null;
+  }
 
   if (resp?.headers?.get('Content-Type')?.includes('application/json')) {
-    data = await resp.json();
+    try {
+      data = await resp.json();
+    } catch (error) {
+      console.error('fetchForm: Failed to parse JSON response:', error);
+      return null;
+    }
   } else if (resp?.headers?.get('Content-Type')?.includes('text/html')) {
-    resp = await fetch(path);
-    data = await resp.text().then((html) => {
-      try {
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        if (doc) {
-          return extractFormDefinition(doc.body).formDef;
+    try {
+      resp = await fetch(path);
+      data = await resp.text().then((html) => {
+        try {
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          if (doc) {
+            return extractFormDefinition(doc.body).formDef;
+          }
+          return doc;
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error('Unable to fetch form definition for path', pathname, path);
+          return null;
         }
-        return doc;
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('Unable to fetch form definition for path', pathname, path);
-        return null;
-      }
-    });
+      });
+    } catch (error) {
+      console.error('fetchForm: Failed to parse HTML response:', error);
+      return null;
+    }
   }
   return data;
 }

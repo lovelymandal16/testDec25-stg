@@ -5706,18 +5706,29 @@ const fetchForm = (url, headers = {}) => {
         headerObj.append(key, value);
     });
     return new Promise((resolve, reject) => {
+        if (!url) {
+            reject('Missing URL parameter');
+            return;
+        }
         request$1(`${url}.model.json`, null, { headers }).then((response) => {
             if (response.status !== 200) {
-                reject('Not Found');
+                reject(`Not Found: ${response.status}`);
+                return;
             }
-            else {
-                let formObj = response.body;
-                if ('model' in formObj) {
-                    const { model } = formObj;
-                    formObj = model;
-                }
-                resolve(jsonString(formObj));
+            if (!response.body) {
+                reject('Empty response body');
+                return;
             }
+            let formObj = response.body;
+            if ('model' in formObj) {
+                const { model } = formObj;
+                formObj = model;
+            }
+            if (!formObj) {
+                reject('Form definition is null after extraction');
+                return;
+            }
+            resolve(jsonString(formObj));
         }).catch((error) => {
             reject(`Network error: ${error.message || error}`);
         });

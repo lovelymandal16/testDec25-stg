@@ -237,8 +237,26 @@ async function renderFormBlock(form, editMode) {
   const block = form.closest('.block[data-aue-resource]');
   if ((editMode && !block.classList.contains('edit-mode')) || !editMode) {
     block.classList.toggle('edit-mode', editMode);
-    const formDefResp = await fetch(`${form.dataset.formpath}.model.json`);
-    const formDef = await formDefResp.json();
+    if (!form.dataset.formpath) {
+      console.warn('Missing formpath attribute on form element');
+      return null;
+    }
+    let formDef;
+    try {
+      const formDefResp = await fetch(`${form.dataset.formpath}.model.json`);
+      if (!formDefResp.ok) {
+        console.error(`Failed to fetch form definition: ${formDefResp.status}`);
+        return null;
+      }
+      formDef = await formDefResp.json();
+    } catch (error) {
+      console.error('Error fetching form definition:', error);
+      return null;
+    }
+    if (!formDef) {
+      console.warn('Form definition is null or undefined');
+      return null;
+    }
     const div = form.parentElement;
     div.replaceChildren();
     const pre = document.createElement('pre');
