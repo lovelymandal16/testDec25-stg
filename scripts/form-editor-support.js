@@ -240,15 +240,15 @@ async function renderFormBlock(form, editMode) {
     if (!form.dataset.formpath) {
       console.warn('Missing formpath attribute on form element');
     }
-    let formDef = {};
+    let formDef ;
     try {
       const formDefResp = await fetch(`${form.dataset.formpath}.model.json`);
       if (!formDefResp.ok) {
         console.error(`Failed to fetch form definition: ${formDefResp.status}`);
       }
-      else {
+    
         formDef = await formDefResp.json();
-      }
+      
     } catch (error) {
       console.error('Error fetching form definition:', error);
     }
